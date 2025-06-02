@@ -1,3 +1,13 @@
+# Self-Defined
+DS_Store
+DS_STORE
+.vscode/
+*.o
+*.out
+*.swp
+
+
+
 # Prerequisites
 *.d
 
