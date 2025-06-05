@@ -14,11 +14,11 @@ LIBFT_A     := $(LIBFT_DIR)/libft.a
 # --- Source Files ---
 # Mandatory source files (relative to SRCDIR)
 SRC_C_FILES := client.c
-SRC_S_FILES := server.c
+SRC_S_FILES := server.c server_utils.c
 
 # For now, assuming bonus logic is within the same files using conditional compilation
 SRC_C_BONUS_FILES := client.c # Or client.c client_specific_bonus.c
-SRC_S_BONUS_FILES := server.c # Or server.c server_specific_bonus.c
+SRC_S_BONUS_FILES := server.c server_utils.c # Or server.c server_specific_bonus.c
 
 # --- Tools ---
 CC          := cc

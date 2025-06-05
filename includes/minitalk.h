@@ -6,7 +6,7 @@
 /*   By: fyudris <fyudris@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/03 14:46:15 by fyudris           #+#    #+#             */
-/*   Updated: 2025/06/04 16:12:08 by fyudris          ###   ########.fr       */
+/*   Updated: 2025/06/05 19:33:12 by fyudris          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,15 @@ typedef struct	s_server_state
 	pid_t			active_client_pid; // PID of the client whose message is being processed
 }	t_server_state;
 
+/* --- Global Variable Declaration --- */
+// The server's state, declared as 'extern' so server_utils.c can access it.
+// The actual variable is DEFINED in server.c.
+extern volatile t_server_state	g_state;
+
+/* --- Server Utility Function Prototypes --- */
+// These functions are now public to the server module (defined in server_utils.c)
+int		init_server_state(pid_t client_pid);
+int		append_char_to_buffer(unsigned char c);
 
 
 #endif

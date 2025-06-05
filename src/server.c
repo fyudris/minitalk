@@ -6,7 +6,7 @@
 /*   By: fyudris <fyudris@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/03 14:45:38 by fyudris           #+#    #+#             */
-/*   Updated: 2025/06/04 16:16:16 by fyudris          ###   ########.fr       */
+/*   Updated: 2025/06/05 19:55:54 by fyudris          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,99 +33,40 @@
  * from one or more clients sequentlially.
  *
  */
-static volatile t_server_state	g_state;
+volatile t_server_state	g_state;
 
 /**
- * @brief Initializes or resets the server's global state for message reception.
- *
- * Frees any previously allocated message buffer, allocates a new initial buffer,
- * and resets all state variables.
- *
- * @param client_pid The PID of the new client. If 0, it indicates a general reset (e.g., server startup or after a message has been fully processed and acknowledged.)
- *
- * @return int Returns SUCCESS (0) if initialization is successful, FAILURE (1) if memory allocation fails.
+ * @brief Handles a fully received byte.
  */
-static int init_server_state(pid_t client_pid)
+static void	handle_completed_byte(void)
 {
-	// Free previous message buffer if it was allocated
-	if (g_state.message_buffer)
+	if (g_state.char_in_progress == '\0')
 	{
-		free(g_state.message_buffer);
-		g_state.message_buffer = NULL;
+		if (g_state.message_buffer)
+			write(FD_STDOUT, g_state.message_buffer, g_state.message_len);
+		write(FD_STDOUT, "\n", 1);
+		if (BONUSB && g_state.active_client_pid != 0)
+			if (kill(g_state.active_client_pid, SIG_ACK) == -1)
+				ft_putstr_fd("Server: Failed to send ACK.\n", FD_STDERR);
+		init_server_state(0);
 	}
-	// Reset all state variables for the new message/client
+	else
+	{
+		if (append_char_to_buffer(g_state.char_in_progress) == FAILURE)
+			init_server_state(g_state.active_client_pid);
+	}
 	g_state.char_in_progress = 0;
 	g_state.bits_received = 0;
-	g_state.message_len = 0;
-	g_state.active_client_pid = client_pid;
-	g_state.buffer_capacity = INITIAL_BUFFER_CAPACITY;
-
-	// Allocate memory for the new message buffer
-	g_state.message_buffer = (char *)malloc(g_state.buffer_capacity);
-	if (!g_state.message_buffer)
-	{
-		ft_putstr_fd("Error: Server failed to allocate initial mesage buffer.\n", FD_STDERR);
-		g_state.buffer_capacity = 0;
-		return (FAILURE);
-	}
-	// Ensure the newly allocated buffer starts as a valid empty string
-	g_state.message_buffer[0] = '\0';
-	return (SUCCESS);
 }
 
 /**
- * @brief Appends a character to the dynamic message buffer, resizing if necessary.
- *
- * Uses ft_realloc to grow the buffer.
- *
- * @param c The character to append.
- *
- * @return int SUCCESS (0) if appended, FAILURE (1) if allocation failed.
- */
-static int	append_char_to_buffer(unsigned char c)
-{
-	size_t	new_capacity;
-	char	*resized_buffer;
-
-	if (!g_state.message_buffer)
-		if (init_server_state(g_state.active_client_pid) == FAILURE)
-			return (FAILURE);
-	if (g_state.message_len + 1 >= g_state.buffer_capacity)
-	{
-		if (g_state.buffer_capacity == 0)
-			new_capacity = INITIAL_BUFFER_CAPACITY;
-		else
-			new_capacity = g_state.buffer_capacity * 2;
-		resized_buffer = ft_realloc(g_state.message_buffer, g_state.message_len, new_capacity);
-		if (!resized_buffer && new_capacity > 0)
-		{
-			ft_putstr_fd("Error: Server ft_realloc failed. Message may be lost/truncated.\n", FD_STDERR);
-			return (FAILURE);
-		}
-		g_state.message_buffer = resized_buffer;
-		g_state.buffer_capacity = new_capacity;
-		if (!g_state.message_buffer && new_capacity > 0)
-			return (FAILURE);
-	}
-	g_state.message_buffer[g_state.message_len++] = c;
-	g_state.message_buffer[g_state.message_len] = '\0';
-	return (SUCCESS);
-}
-
-/**
- * @brief Main signal handler for SIGUSR1 and SIGUSR2
- *
- * Reconstructs bits to bytes, handles client differentiation, appends to buffer, prints message on '\0', and handles bonus ACK.
- *
- * @param sig The signal number received
- * @param info Pointer to siginfo_t containing sender's PID.
- * @param ucontext Unused.
- *
+ * @brief Main signal handler for SIGUSR1 and SIGUSR2.
  */
 static void	server_signal_handler(int sig, siginfo_t *info, void *ucontext)
 {
 	(void)ucontext;
-	if (g_state.active_client_pid == 0 || (info->si_pid != 0 && g_state.active_client_pid != info->si_pid))
+	if (g_state.active_client_pid == 0 ||
+		(info->si_pid != 0 && g_state.active_client_pid != info->si_pid))
 	{
 		if (init_server_state(info->si_pid) == FAILURE)
 			return ;
@@ -134,57 +75,45 @@ static void	server_signal_handler(int sig, siginfo_t *info, void *ucontext)
 		g_state.char_in_progress |= (1 << (7 - g_state.bits_received));
 	g_state.bits_received++;
 	if (g_state.bits_received == 8)
-	{
-		if (g_state.char_in_progress == '\0')
-		{
-			if (g_state.message_buffer)
-				write(FD_STDOUT, g_state.message_buffer, g_state.message_len);
-			write(FD_STDOUT, "\n", 1);
-			if (BONUSB)
-			{
-				if (g_state.active_client_pid != 0)
-					if (kill(g_state.active_client_pid, SIG_ACK) == -1)
-						ft_putstr_fd("Server: Failed to send ACK.\n", FD_STDERR);
-			}
-			init_server_state(0);
-		}
-		else if (append_char_to_buffer(g_state.char_in_progress) == FAILURE)
-		{
-			ft_putstr_fd("Server: Failed to append char, message might be incomplete.\n", FD_STDERR);
-			init_server_state(info->si_pid); // Reset for current client, effectively dropping current message attempt
-		}
-		g_state.char_in_progress = 0;
-		g_state.bits_received = 0;
-	}
+		handle_completed_byte();
 }
 
 /**
- * @brief Main function for the Minitalk server.
- *
- * Initializes server, prints PID, sets up signal handlers, and waits for signals.
- * @return int SUCCESS or FAILURE.
+ * @brief Sets up the signal handlers for SIGUSR1 and SIGUSR2.
+ * This helper function contains all logic for configuring sigaction.
+ * 
+ * @return SUCCESS or FAILURE.
  */
-int	main(void)
+static int	setup_signal_handlers(void)
 {
 	struct sigaction	sa_config;
-	pid_t				server_pid;
 
-	server_pid = getpid();
-	ft_printf("Server PID: %d\n", server_pid);
-	if (init_server_state(0) == FAILURE)
-		return (FAILURE);
 	sa_config.sa_sigaction = server_signal_handler;
 	sa_config.sa_flags = SA_SIGINFO | SA_RESTART;
 	if (sigemptyset(&sa_config.sa_mask) == -1)
 	{
 		ft_putstr_fd("Error: sigemptyset failed.\n", FD_STDERR);
-		if (g_state.message_buffer)
-			free(g_state.message_buffer);
 		return (FAILURE);
 	}
-	if (sigaction(SIG_BIT_ONE, &sa_config, NULL) == -1 || sigaction(SIG_BIT_ZERO, &sa_config, NULL) == -1)
+	if (sigaction(SIG_BIT_ONE, &sa_config, NULL) == -1 ||
+		sigaction(SIG_BIT_ZERO, &sa_config, NULL) == -1)
 	{
 		ft_putstr_fd("Error: sigaction setup failed.\n", FD_STDERR);
+		return (FAILURE);
+	}
+	return (SUCCESS);
+}
+
+/**
+ * @brief Main function for the Minitalk server.
+ */
+int	main(void)
+{
+	ft_printf("Server PID: %d\n", getpid());
+	if (init_server_state(0) == FAILURE)
+		return (FAILURE);
+	if (setup_signal_handlers() == FAILURE)
+	{
 		if (g_state.message_buffer)
 			free(g_state.message_buffer);
 		return (FAILURE);
@@ -193,36 +122,10 @@ int	main(void)
 	while (1)
 		pause();
 	if (g_state.message_buffer)
-		free (g_state.message_buffer);
+		free(g_state.message_buffer);
 	return (SUCCESS);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// #define END_TRANSMISSION '\0'
 
 // /**
 //  * @brief    Checks if the signal is SIGUSR1. If it is, it will
