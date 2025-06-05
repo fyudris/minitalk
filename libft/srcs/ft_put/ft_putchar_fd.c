@@ -6,7 +6,7 @@
 /*   By: fyudris <fyudris@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/27 23:00:45 by fyudris           #+#    #+#             */
-/*   Updated: 2025/06/04 15:08:35 by fyudris          ###   ########.fr       */
+/*   Updated: 2025/06/05 20:25:50 by fyudris          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,5 +37,5 @@ NOTES
 */
 int	ft_putchar_fd(char c, int fd)
 {
-	return(write(fd, &c, 1));
+	return (write(fd, &c, 1));
 }

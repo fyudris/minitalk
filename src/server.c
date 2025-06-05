@@ -6,7 +6,7 @@
 /*   By: fyudris <fyudris@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/03 14:45:38 by fyudris           #+#    #+#             */
-/*   Updated: 2025/06/05 19:55:54 by fyudris          ###   ########.fr       */
+/*   Updated: 2025/06/05 20:28:40 by fyudris          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,8 +29,8 @@
  * The `volatile` qualifier is used to ensure that the compiler does not make
  * unsafe optimizations regarding its access, as its members can be modified
  * unexpectiedly by signal handlers. Thi ensures data integrity between discrete
- * signal events and allows the server to correctly reconstruct messages bit by bit
- * from one or more clients sequentlially.
+ * signal events and allows the server to correctly reconstruct messages bit by
+ * bit from one or more clients sequentlially.
  *
  */
 volatile t_server_state	g_state;
@@ -65,8 +65,8 @@ static void	handle_completed_byte(void)
 static void	server_signal_handler(int sig, siginfo_t *info, void *ucontext)
 {
 	(void)ucontext;
-	if (g_state.active_client_pid == 0 ||
-		(info->si_pid != 0 && g_state.active_client_pid != info->si_pid))
+	if (g_state.active_client_pid == 0
+		|| (info->si_pid != 0 && g_state.active_client_pid != info->si_pid))
 	{
 		if (init_server_state(info->si_pid) == FAILURE)
 			return ;
@@ -81,7 +81,7 @@ static void	server_signal_handler(int sig, siginfo_t *info, void *ucontext)
 /**
  * @brief Sets up the signal handlers for SIGUSR1 and SIGUSR2.
  * This helper function contains all logic for configuring sigaction.
- * 
+ *
  * @return SUCCESS or FAILURE.
  */
 static int	setup_signal_handlers(void)
@@ -95,8 +95,8 @@ static int	setup_signal_handlers(void)
 		ft_putstr_fd("Error: sigemptyset failed.\n", FD_STDERR);
 		return (FAILURE);
 	}
-	if (sigaction(SIG_BIT_ONE, &sa_config, NULL) == -1 ||
-		sigaction(SIG_BIT_ZERO, &sa_config, NULL) == -1)
+	if (sigaction(SIG_BIT_ONE, &sa_config, NULL) == -1
+		|| sigaction(SIG_BIT_ZERO, &sa_config, NULL) == -1)
 	{
 		ft_putstr_fd("Error: sigaction setup failed.\n", FD_STDERR);
 		return (FAILURE);
@@ -125,7 +125,6 @@ int	main(void)
 		free(g_state.message_buffer);
 	return (SUCCESS);
 }
-
 
 // /**
 //  * @brief    Checks if the signal is SIGUSR1. If it is, it will

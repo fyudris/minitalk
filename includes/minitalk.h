@@ -6,7 +6,7 @@
 /*   By: fyudris <fyudris@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/03 14:46:15 by fyudris           #+#    #+#             */
-/*   Updated: 2025/06/05 19:33:12 by fyudris          ###   ########.fr       */
+/*   Updated: 2025/06/05 20:25:22 by fyudris          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,31 +45,30 @@
 # define INITIAL_BUFFER_CAPACITY 64
 
 // --- Bonus Mode Definition ---
-#ifndef BONUSB
-# define BONUSB 0
-#endif
+# ifndef BONUSB
+#  define BONUSB 0
+# endif
 
 /* --- Struct Definition --- */
-// This struct is primarily for the server's internal state management.
-typedef struct	s_server_state
+typedef struct s_server_state
 {
-	unsigned char	char_in_progress; // The byte currently being reconstructed bit by bit.
-	int				bits_received; // Tract how many bits of current_char have been received (0-7)
+	unsigned char	char_in_progress;
+	int				bits_received;
 	char			*message_buffer;
-	size_t			message_len; // Current length of the string in message_buffer
-	size_t			buffer_capacity; // Current allocated capacity of message_buffer
-	pid_t			active_client_pid; // PID of the client whose message is being processed
+	size_t			message_len;
+	size_t			buffer_capacity;
+	pid_t			active_client_pid;
 }	t_server_state;
 
 /* --- Global Variable Declaration --- */
-// The server's state, declared as 'extern' so server_utils.c can access it.
+// The server's state, declared as 'extern' so server_utils.c
+// can access it.
 // The actual variable is DEFINED in server.c.
 extern volatile t_server_state	g_state;
 
 /* --- Server Utility Function Prototypes --- */
-// These functions are now public to the server module (defined in server_utils.c)
+// These functions are now public to the server module
+// (defined in server_utils.c)
 int		init_server_state(pid_t client_pid);
 int		append_char_to_buffer(unsigned char c);
-
-
 #endif

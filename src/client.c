@@ -6,7 +6,7 @@
 /*   By: fyudris <fyudris@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/03 14:45:25 by fyudris           #+#    #+#             */
-/*   Updated: 2025/06/05 19:38:21 by fyudris          ###   ########.fr       */
+/*   Updated: 2025/06/05 21:02:02 by fyudris          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@
  * to ensure safe access in the presence of signals. This is the single
  * permitted global variable for the client program.
  */
-static volatile sig_atomic_t g_ack_received = 0;
+static volatile sig_atomic_t	g_ack_received = 0;
 
 /**
  * @brief (BONUS) Signal handler for the client to receive acknowledgment.
@@ -80,7 +80,7 @@ static void	send_message(pid_t server_pid, const char *message)
 				signal_to_send = SIG_BIT_ZERO;
 			if (kill(server_pid, signal_to_send) == -1)
 				exit(ft_putstr_fd("Error: Failed to send signal.\n", FD_STDERR));
-			usleep(100);
+			usleep(500);
 			bit_index--;
 		}
 		if (message[i] == '\0')
@@ -119,15 +119,14 @@ static pid_t	parse_and_validate_args(int argc, char **argv)
  */
 int	main(int argc, char *argv[])
 {
-	pid_t		server_pid;
-	const char	*message;
+	pid_t				server_pid;
+	const char			*message;
+	struct sigaction	sa_ack;
 
 	server_pid = parse_and_validate_args(argc, argv);
 	message = argv[2];
 	if (BONUSB)
 	{
-		struct sigaction	sa_ack;
-
 		sa_ack.sa_handler = client_ack_handler;
 		sa_ack.sa_flags = SA_RESTART;
 		sigemptyset(&sa_ack.sa_mask);
